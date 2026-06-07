@@ -1,0 +1,23 @@
+{
+    "_comment": "复制此文件为 settings.json 并填入你的配置",
+    "oj": {
+        "username": "your_oj_username",
+        "password": "your_oj_password",
+        "base_url": "https://hydro.ac"
+    },
+    "ai": {
+        "api_key": "sk-your-api-key",
+        "api_url": "https://api.deepseek.com/v1/chat/completions",
+        "model": "deepseek-v4-flash",
+        "system_prompt": "你是 DeepSeek V4。回复要简洁易懂，帮助用户解决问题。遇到代码时，用换行保证格式清晰可读。不要使用任何 markdown 语法（如加粗、斜体、列表、引用、标题等）。",
+        "max_tokens": 4096,
+        "temperature": 0.7,
+        "timeout": 120
+    },
+    "bot": {
+        "admin_id": 0,
+        "allowed_user_ids": [],
+        "poll_interval_seconds": 3,
+        "blocked_words": []
+    }
+}

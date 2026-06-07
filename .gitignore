@@ -1,0 +1,19 @@
+# 敏感配置（用户自行填入）
+settings.json
+
+# 运行生成的文件
+*.log
+verified_ips.json
+__pycache__/
+*.pyc
+*.pyo
+
+# 打包产物
+*.exe
+build/
+dist/
+*.spec
+
+# 系统
+.DS_Store
+Thumbs.db
