@@ -1,0 +1,40 @@
+{
+    "_comment": "HydroAI 配置文件 — 填入你的信息后保存即可使用",
+    "_oj_hint": "OJ 站点的登录信息",
+    "oj": {
+        "_username_hint": "你的 OJ 用户名",
+        "username": "",
+        "_password_hint": "你的 OJ 密码",
+        "password": "",
+        "_base_url_hint": "OJ 服务器地址（末尾不要 /）",
+        "base_url": "https://hydro.ac"
+    },
+    "_ai_hint": "AI 模型 API 配置（默认 DeepSeek）",
+    "ai": {
+        "_api_key_hint": "你的 DeepSeek / 兼容 API 密钥",
+        "api_key": "",
+        "_api_url_hint": "API 地址，支持 OpenAI 兼容格式",
+        "api_url": "https://api.deepseek.com/v1/chat/completions",
+        "_model_hint": "可选: deepseek-v4-flash / deepseek-v4-pro",
+        "model": "deepseek-v4-flash",
+        "_system_prompt_hint": "AI 系统提示词，可自定义角色",
+        "system_prompt": "你是 DeepSeek V4。回复要简洁易懂，帮助用户解决问题。遇到代码时，用换行保证格式清晰可读。不要使用任何 markdown 语法（如加粗、斜体、列表、引用、标题等）。",
+        "_max_tokens_hint": "单次最大生成 token 数",
+        "max_tokens": 4096,
+        "_temperature_hint": "回复随机性 0-2，越高越随机",
+        "temperature": 0.7,
+        "_timeout_hint": "API 请求超时秒数",
+        "timeout": 120
+    },
+    "_bot_hint": "机器人行为配置",
+    "bot": {
+        "_admin_id_hint": "管理员的 OJ 用户数字 ID（留 0 则首个验证者成为管理员）",
+        "admin_id": 0,
+        "_allowed_user_ids_hint": "白名单用户列表（id = OJ 用户数字ID, note = 备注）",
+        "allowed_user_ids": [],
+        "_poll_interval_hint": "消息轮询间隔（秒）",
+        "poll_interval_seconds": 3,
+        "_blocked_words_hint": "屏蔽词列表，匹配到的消息不会触发 AI",
+        "blocked_words": []
+    }
+}
