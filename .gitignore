@@ -1,8 +1,7 @@
-# 运行时生成
-*.log
-verified_ips.json
+# 配置文件（用户自行填写，首次运行自动创建）
+settings.json
 
-# 运行生成的文件
+# 运行时生成
 *.log
 verified_ips.json
 __pycache__/

@@ -121,13 +121,43 @@ class Config:
 
     # ── 内部 ──
 
+    DEFAULT_CONFIG = {
+        "_comment": "HydroAI 配置文件 — 首次运行自动生成，请填入你的信息",
+        "oj": {
+            "username": "",
+            "password": "",
+            "base_url": "https://hydro.ac",
+        },
+        "ai": {
+            "api_key": "",
+            "api_url": "https://api.deepseek.com/v1/chat/completions",
+            "model": "deepseek-v4-flash",
+            "system_prompt": "你是 DeepSeek V4。回复要简洁易懂，帮助用户解决问题。遇到代码时，用换行保证格式清晰可读。不要使用任何 markdown 语法（如加粗、斜体、列表、引用、标题等）。",
+            "max_tokens": 4096,
+            "temperature": 0.7,
+            "timeout": 120,
+        },
+        "bot": {
+            "admin_id": 0,
+            "allowed_user_ids": [],
+            "poll_interval_seconds": 3,
+            "blocked_words": [],
+        },
+    }
+
     def _load(self) -> dict:
         try:
             with open(self.config_path, "r", encoding="utf-8") as f:
                 return json.load(f)
         except FileNotFoundError:
-            print(f"  {RED}[错误]{RST} 未找到配置文件: {self.config_path}", flush=True)
-            sys.exit(1)
+            # 自动创建默认配置
+            print(f"  {YEL}· 未找到配置文件，正在创建默认配置...{RST}", flush=True)
+            data = {k: dict(v) for k, v in self.DEFAULT_CONFIG.items()}
+            with open(self.config_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=4)
+            print(f"  {GRN}· 已创建: {self.config_path}{RST}", flush=True)
+            print(f"  {YEL}· 请编辑配置文件后重新启动{RST}", flush=True)
+            return data
         except json.JSONDecodeError as e:
             print(f"  {RED}[错误]{RST} 配置文件格式错误: {e}", flush=True)
             sys.exit(1)
