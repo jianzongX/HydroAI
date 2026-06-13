@@ -71,6 +71,22 @@ HydroAI/
 └── settings.json       配置文件（本地，不入库）
 ```
 
+## 📋 更新日志
+
+### v1.2.0 (2026-06-13)
+
+- 🐛 **修复首次运行崩溃** — 修复 `config.py` 中 `DEFAULT_CONFIG` 的 `_comment` 字段导致 `dict()` 构造失败的 Bug
+- ⚡ **提升稳定性** — 改用 `copy.deepcopy` 安全创建默认配置，不再因配置字段类型差异崩溃
+- 🚀 打包为单 exe 文件即可运行，首次启动自动生成 `settings.json`
+
+### v1.1.2
+
+- 自动创建默认配置，移除仓库中的 settings.json
+
+### v1.1.1
+
+- 彩虹色 ASCII 艺术字，HydroAI 品牌重命名，自动识别管理员
+
 ## 🔧 技术栈
 
 - Python 3.12

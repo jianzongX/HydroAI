@@ -152,7 +152,8 @@ class Config:
         except FileNotFoundError:
             # 自动创建默认配置
             print(f"  {YEL}· 未找到配置文件，正在创建默认配置...{RST}", flush=True)
-            data = {k: dict(v) for k, v in self.DEFAULT_CONFIG.items()}
+            import copy
+            data = copy.deepcopy(self.DEFAULT_CONFIG)
             with open(self.config_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, ensure_ascii=False, indent=4)
             print(f"  {GRN}· 已创建: {self.config_path}{RST}", flush=True)
