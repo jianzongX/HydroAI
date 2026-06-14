@@ -18,6 +18,7 @@ else:
     BASE = os.path.dirname(os.path.abspath(__file__))
 
 SETTINGS_PATH = os.path.join(BASE, "settings.json")
+HTML_PATH = os.path.join(BASE, "index.html")
 PORT = 8080
 
 MAX_LOG = 200  # 保留最近 200 行控制台输出
@@ -139,6 +140,15 @@ def save_config(data: dict) -> bool:
         return False
 
 
+def load_html() -> str:
+    """从 index.html 文件读取页面，不存在时返回内嵌备用页面"""
+    try:
+        with open(HTML_PATH, "r", encoding="utf-8") as f:
+            return f.read()
+    except Exception:
+        return "<!DOCTYPE html><html><head><meta charset='utf-8'><title>HydroAI</title></head><body><h1>HydroAI 管理面板</h1><p>页面文件 index.html 未找到。</p></body></html>"
+
+
 # ========== Handler 工厂 ==========
 
 def _make_handler(bot_state: BotState | None):
@@ -152,7 +162,7 @@ def _make_handler(bot_state: BotState | None):
             path = urlparse(self.path).path
 
             if path == "/":
-                self._html(DASHBOARD_HTML)
+                self._html(load_html())
             elif path == "/api/config":
                 self._json(self._read_config())
             elif path == "/api/status":
@@ -291,167 +301,6 @@ def start_thread(host="0.0.0.0", port=PORT, bot_state=None) -> tuple[threading.T
     print(f"  \033[90m· 无密码保护，所有功能直接可用\033[0m")
     return t, server
 
-
-# ========== 仪表盘 HTML ==========
-
-DASHBOARD_HTML = r"""<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>HydroAI 管理面板</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans SC",sans-serif;background:#f6f7f9;color:#1c2127;padding:0}
-.nav{background:#1c2127;color:#fff;padding:0 24px;height:48px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 3px rgba(0,0,0,.15)}
-.nav h1{font-size:16px;font-weight:600;color:#fff}
-.container{max-width:960px;margin:0 auto;padding:20px 16px}
-.tabs{display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid #d1d5da}
-.tab{padding:8px 20px;cursor:pointer;font-size:14px;color:#5f6b7c;border-bottom:2px solid transparent;margin-bottom:-2px}
-.tab:hover{color:#2d72d2}
-.tab.active{color:#2d72d2;border-bottom-color:#2d72d2;font-weight:600}
-.pane{display:none}.pane.active{display:block}
-.card{background:#fff;border:1px solid #d1d5da;border-radius:6px;padding:16px 20px;margin-bottom:12px}
-.card h2{font-size:14px;color:#1c2127;margin-bottom:12px;font-weight:600}
-.flex{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.badge{display:inline-block;padding:2px 8px;border-radius:3px;font-size:12px;font-weight:600}
-.badge.green{background:#e6f7ec;color:#1c6e42}
-.badge.red{background:#fce8e8;color:#cb3d3d}
-.badge.gray{background:#f0f1f3;color:#5f6b7c}
-label{display:block;font-size:13px;color:#5f6b7c;margin-bottom:4px}
-input,textarea,select{width:100%;padding:7px 10px;border-radius:4px;border:1px solid #d1d5da;background:#fff;color:#1c2127;font-size:13px;outline:none;font-family:inherit}
-input:focus,textarea:focus{border-color:#2d72d2;box-shadow:0 0 0 2px rgba(45,114,210,.15)}
-textarea{resize:vertical;min-height:70px;font-size:13px}
-.btn{padding:6px 14px;border-radius:4px;border:none;cursor:pointer;font-size:13px;font-weight:500}
-.btn.primary{background:#2d72d2;color:#fff}.btn.primary:hover{background:#215db0}
-.btn.danger{background:#cb3d3d;color:#fff}.btn.danger:hover{background:#b52d2d}
-.btn.outline{background:#fff;color:#5f6b7c;border:1px solid #d1d5da}.btn.outline:hover{background:#f6f7f9}
-.btn.green{background:#1c6e42;color:#fff}
-.list-item{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #f0f1f3}
-.list-item:last-child{border-bottom:none}
-.tag{display:inline-block;padding:2px 8px;border-radius:3px;background:#f0f1f3;color:#1c2127;font-size:13px}
-.log-box{background:#f6f7f9;border:1px solid #d1d5da;border-radius:4px;padding:10px;font-family:monospace;font-size:12px;line-height:1.6;max-height:400px;overflow-y:auto;white-space:pre-wrap}
-.toast{position:fixed;bottom:20px;right:20px;padding:10px 18px;border-radius:6px;background:#1c2127;color:#fff;font-size:13px;transform:translateY(80px);opacity:0;transition:.3s;z-index:999}
-.toast.show{transform:translateY(0);opacity:1}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-@media(max-width:600px){.grid2{grid-template-columns:1fr}}
-.stat-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
-.stat-card{background:#f6f7f9;border:1px solid #d1d5da;border-radius:4px;padding:10px;text-align:center}
-.stat-card .num{font-size:22px;font-weight:700;color:#2d72d2}
-.stat-card .label{font-size:11px;color:#5f6b7c;margin-top:2px}
-</style>
-</head>
-<body>
-<div class="nav"><h1>HydroAI 管理面板</h1></div>
-<div class="container">
-<div class="tabs">
-  <div class="tab active" data-tab="status">状态</div>
-  <div class="tab" data-tab="whitelist">白名单</div>
-  <div class="tab" data-tab="blocked">屏蔽词</div>
-  <div class="tab" data-tab="ai">AI 设置</div>
-  <div class="tab" data-tab="oj">OJ 配置</div>
-  <div class="tab" data-tab="log">日志</div>
-</div>
-
-<div class="pane active" id="pane-status">
-  <div class="card">
-    <h2>运行状态</h2>
-    <div class="flex" style="margin-bottom:10px;">
-      <span class="badge gray" id="sb">检查中...</span>
-      <span style="color:#5f6b7c;font-size:13px;" id="st"></span>
-    </div>
-    <div class="stat-row">
-      <div class="stat-card"><div class="num" id="s1">-</div><div class="label">白名单</div></div>
-      <div class="stat-card"><div class="num" id="s2">-</div><div class="label">屏蔽词</div></div>
-      <div class="stat-card"><div class="num" id="s3">-</div><div class="label">已处理</div></div>
-      <div class="stat-card"><div class="num" id="s4">-</div><div class="label">对话</div></div>
-      <div class="stat-card"><div class="num" id="s5">-</div><div class="label">管理员</div></div>
-    </div>
-  </div>
-  <div class="card">
-    <h2>操作</h2>
-    <div class="flex">
-      <button class="btn green" id="bs">启动</button>
-      <button class="btn danger" id="bp">停止</button>
-    </div>
-  </div>
-  <div class="card" id="tc" style="display:none;">
-    <h2>AI 思考</h2>
-    <div class="log-box" id="tx" style="max-height:180px;color:#2d72d2;"></div>
-  </div>
-</div>
-<div class="pane" id="pane-whitelist">
-  <div class="card"><h2>白名单用户</h2><div id="wl"></div></div>
-  <div class="card"><h2>添加用户</h2>
-    <div class="flex"><input type="number" id="wi" placeholder="用户 ID" style="max-width:180px;"><button class="btn primary" id="wa">添加</button></div>
-  </div>
-</div>
-<div class="pane" id="pane-blocked">
-  <div class="card"><h2>屏蔽词列表</h2><div id="bw"></div></div>
-  <div class="card"><h2>添加屏蔽词</h2>
-    <div class="flex"><input type="text" id="bi" placeholder="输入要屏蔽的词" style="max-width:220px;"><button class="btn primary" id="ba">添加</button></div>
-  </div>
-</div>
-<div class="pane" id="pane-ai">
-  <div class="card"><h2>API 配置</h2>
-    <div style="margin-bottom:10px;"><label>API 地址</label><input type="text" id="au"></div>
-    <div style="margin-bottom:10px;"><label>API Key</label><input type="password" id="ak" placeholder="留空不变"><small style="color:#8f99a8;"> 当前: <span id="akm"></span></small></div>
-    <div style="margin-bottom:10px;"><label>模型</label>
-      <select id="am"><option value="deepseek-v4-flash">deepseek-v4-flash</option><option value="deepseek-v4-pro">deepseek-v4-pro</option></select>
-    </div>
-  </div>
-  <div class="card"><h2>回复设置</h2>
-    <div style="margin-bottom:10px;"><label>系统提示词</label><textarea id="ap" rows="4"></textarea></div>
-    <div class="grid2"><div><label>最大 Token</label><input type="number" id="amt"></div><div><label>温度</label><input type="number" step="0.1" id="at"></div></div>
-    <div style="margin-top:10px;"><label>超时 (秒)</label><input type="number" id="ato"></div>
-  </div>
-  <button class="btn primary" id="as">保存 AI 设置</button>
-</div>
-<div class="pane" id="pane-oj">
-  <div class="card"><h2>OJ 账号</h2>
-    <div style="margin-bottom:10px;"><label>服务器地址</label><input type="text" id="ou"></div>
-    <div style="margin-bottom:10px;"><label>用户名</label><input type="text" id="oun"></div>
-    <div style="margin-bottom:10px;"><label>密码</label><input type="password" id="op" placeholder="留空不变"></div>
-    <div style="margin-bottom:10px;"><label>轮询间隔 (秒)</label><input type="number" id="opi"></div>
-    <div style="margin-bottom:10px;"><label>管理员 ID</label><input type="number" id="oad"></div>
-  </div>
-  <button class="btn primary" id="os">保存 OJ 设置</button>
-</div>
-<div class="pane" id="pane-log">
-  <div class="card">
-    <div class="flex" style="justify-content:space-between;"><h2>运行日志</h2><button class="btn outline" id="lr">刷新</button></div>
-    <div class="log-box" id="lc">加载中...</div>
-  </div>
-</div>
-</div>
-<div class="toast" id="toast"></div>
-<script>
-document.querySelectorAll(".tab").forEach(function(t){t.addEventListener("click",function(){document.querySelectorAll(".tab").forEach(function(x){x.classList.remove("active")});document.querySelectorAll(".pane").forEach(function(x){x.classList.remove("active")});t.classList.add("active");document.getElementById("pane-"+t.dataset.tab).classList.add("active");if(t.dataset.tab==="log")ll()})})
-function tt(m,t){var e=document.getElementById("toast");e.textContent=m;e.className="toast "+(t||"success");setTimeout(function(){e.classList.add("show")},10);setTimeout(function(){e.classList.remove("show")},3000)}
-async function ap(u,o){return(await fetch(u,Object.assign({headers:{"Content-Type":"application/json"}},o||{}))).json()}
-setInterval(async function(){var d=await ap("/api/status"),b=document.getElementById("sb");b.textContent=d.bot_running?" 运行中":" 已停止";b.className="badge "+(d.bot_running?"green":"red");document.getElementById("st").textContent=d.status_text||"";document.getElementById("s1").textContent=d.whitelist_count;document.getElementById("s2").textContent=d.blocked_words_count;document.getElementById("s3").textContent=d.messages_processed;document.getElementById("s4").textContent=d.active_users;document.getElementById("s5").textContent=d.admin_id;document.getElementById("bs").style.display=d.bot_running?"none":"";document.getElementById("bp").style.display=d.bot_running?"":"none";var tc=d.thinking_content||"",tC=document.getElementById("tc"),tX=document.getElementById("tx");if(tc){tC.style.display="";tX.textContent=tc;tX.scrollTop=tX.scrollHeight}else{tC.style.display="none"}},1500)
-document.getElementById("bs").addEventListener("click",async function(){tt((await ap("/api/bot/start",{method:"POST",body:"{}"})).message)})
-document.getElementById("bp").addEventListener("click",async function(){if(!confirm("确定停止？"))return;tt((await ap("/api/bot/stop",{method:"POST",body:"{}"})).message)})
-var cf={};async function lc(){cf=await ap("/api/config");rW();rB();rA();rO()}
-async function sc(u,m){var r=await ap("/api/config",{method:"POST",body:JSON.stringify(u)});tt(r.message,r.ok?"success":"error");if(r.ok)lc()}
-function h(s){return String(s).replace(/[&<>"]/g,function(m){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]})}
-function ui(u){return typeof u==="number"?u:u.id}function un(u){return typeof u==="number"?"":(u.note||"")}
-function rW(){var l=document.getElementById("wl"),ra=cf.bot&&cf.bot.allowed_user_ids||[];if(ra.length&&typeof ra[0]==="number")ra=ra.map(function(i){return{id:i,note:""}});if(!ra.length){l.innerHTML='<div style="color:#8f99a8;">(空)</div>';return}var ad=cf.bot&&cf.bot.admin_id;l.innerHTML=ra.map(function(u){var id=ui(u),no=un(u),ia=id==ad;return'<div class="list-item"><div><span class="tag">'+id+'</span>'+(ia?' <span class="badge gray">管理员</span>':'')+(no?' <span style="color:#5f6b7c;font-size:12px;">&mdash; '+h(no)+'</span>':'')+'</div><div class="flex" style="gap:4px;"><button class="btn outline" onclick="eN('+id+')" style="padding:2px 8px;font-size:12px;">备注</button>'+(ia?'':'<button class="btn danger" onclick="rW2('+id+')" style="padding:2px 8px;font-size:12px;">删除</button>')+'</div></div>'}).join("")}
-async function eN(id){var ra=cf.bot&&cf.bot.allowed_user_ids||[];var u=ra.find(function(x){return ui(x)===id});if(!u)return;var no=prompt("备注：",un(u));if(no===null)return;if(typeof u==="number")ra=ra.map(function(x){return x===id?{id:id,note:no}:x});else u.note=no;await sc({bot:{allowed_user_ids:ra}})}
-async function rW2(id){var ra=cf.bot&&cf.bot.allowed_user_ids||[];ra=ra.filter(function(u){return ui(u)!==id});await sc({bot:{allowed_user_ids:ra}})}
-document.getElementById("wa").addEventListener("click",async function(){var i=document.getElementById("wi"),id=parseInt(i.value);if(!id||isNaN(id)){tt("无效 ID","error");return}var ra=cf.bot&&cf.bot.allowed_user_ids||[];if(ra.some(function(u){return ui(u)===id})){tt("已在白名单","error");return}ra.push({id:id,note:""});await sc({bot:{allowed_user_ids:ra}});i.value=""})
-function rB(){var l=document.getElementById("bw"),w=cf.bot&&cf.bot.blocked_words||[];if(!w.length){l.innerHTML='<div style="color:#8f99a8;">(空)</div>';return}l.innerHTML=w.map(function(x){return'<div class="list-item"><span>&laquo;'+h(x)+'&raquo;</span><button class="btn danger" onclick="rB2(\''+x.replace(/'/g,"")+'\')" style="padding:2px 8px;font-size:12px;">删除</button></div>'}).join("")}
-async function rB2(w){var a=(cf.bot&&cf.bot.blocked_words||[]).filter(function(x){return x!==w});await sc({bot:{blocked_words:a}})}
-document.getElementById("ba").addEventListener("click",async function(){var i=document.getElementById("bi"),w=i.value.trim();if(!w){tt("输入词","error");return}var ws=cf.bot&&cf.bot.blocked_words||[];if(ws.indexOf(w)!==-1){tt("已存在","error");return}ws.push(w);await sc({bot:{blocked_words:ws}});i.value=""})
-function rA(){var a=cf.ai||{};document.getElementById("au").value=a.api_url||"";document.getElementById("akm").textContent=a.api_key_masked||"未设置";document.getElementById("ak").value="";var m=document.getElementById("am");if(a.model&&[].slice.call(m.options).some(function(o){return o.value===a.model}))m.value=a.model;document.getElementById("ap").value=a.system_prompt||"";document.getElementById("amt").value=a.max_tokens||4096;document.getElementById("at").value=a.temperature||0.7;document.getElementById("ato").value=a.timeout||120}
-document.getElementById("as").addEventListener("click",async function(){var u={ai:{api_url:document.getElementById("au").value.trim(),api_key:document.getElementById("ak").value.trim(),model:document.getElementById("am").value,system_prompt:document.getElementById("ap").value.trim(),max_tokens:parseInt(document.getElementById("amt").value)||4096,temperature:parseFloat(document.getElementById("at").value)||0.7,timeout:parseInt(document.getElementById("ato").value)||120}};await sc(u)})
-function rO(){var o=cf.oj||{},b=cf.bot||{};document.getElementById("ou").value=o.base_url||"";document.getElementById("oun").value=o.username||"";document.getElementById("op").value="";document.getElementById("opi").value=b.poll_interval_seconds||3;document.getElementById("oad").value=b.admin_id||""}
-document.getElementById("os").addEventListener("click",async function(){var pw=document.getElementById("op").value.trim(),u={oj:{base_url:document.getElementById("ou").value.trim(),username:document.getElementById("oun").value.trim()},bot:{poll_interval_seconds:parseInt(document.getElementById("opi").value)||3,admin_id:parseInt(document.getElementById("oad").value)||214}};if(pw)u.oj.password=pw;await sc(u)})
-async function ll(){var b=document.getElementById("lc");b.textContent="加载中...";var d=await ap("/api/log");b.textContent=(d.lines||[]).join("\n")||"(空)";b.scrollTop=b.scrollHeight}
-document.getElementById("lr").addEventListener("click",ll);lc();
-</script>
-</body>
-</html>"""
 
 if __name__ == "__main__":
     if sys.platform == "win32":
