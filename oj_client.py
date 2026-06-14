@@ -6,7 +6,8 @@ import time
 
 import requests
 
-from config import Config, RST, RED, GRN, BLU, YEL, DIM
+from config import Config
+from console_ui import RST, RED, GRN, BLU, YEL, DIM
 
 logger = logging.getLogger(__name__)
 
