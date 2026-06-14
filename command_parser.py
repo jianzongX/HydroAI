@@ -29,28 +29,16 @@ class CommandResult:
         self.status_request = status_request
 
 
-# ── AI 管理员动作指令提示 ──
+# ── 管理员指令提示 ──
 
 ADMIN_ACTION_PROMPT = """
-你可以通过动作指令执行各种操作。动作指令放在回复末尾，一行一个：
+管理操作：
+  [ACTION: add_whitelist <ID>]      [ACTION: remove_whitelist <ID>]
+  [ACTION: add_blocked <词>]         [ACTION: remove_blocked <词>]
+  [ACTION: list_whitelist]           [ACTION: approve <ID>]
+  [ACTION: status]                   [ACTION: get_time]
 
-📋 管理操作：
-[ACTION: add_whitelist <用户ID>]  添加用户到白名单
-[ACTION: remove_whitelist <用户ID>]  从白名单移除用户
-[ACTION: add_blocked <词>]  添加屏蔽词
-[ACTION: remove_blocked <词>]  删除屏蔽词
-[ACTION: list_whitelist]  查看白名单和屏蔽词列表
-[ACTION: approve <用户ID>]  同意用户的加入申请
-[ACTION: status]  查看机器人运行状态
-
-🌐 查询工具：
-[ACTION: search <搜索词>]  联网搜索最新信息
-[ACTION: get_time]  获取当前准确时间
-
-当用户问的问题需要最新信息时，使用 search 去搜索。
-当用户问现在几点、今天几号时，使用 get_time。
-例：用户问"今天比特币价格" → AI搜索 → search 比特币价格 + 把结果回复给用户
-例：用户问"现在几点" → AI用 get_time 获取时间后回复
+指令放在回复末尾，每行一条。不要介绍你是谁，直接回答用户。
 """
 
 
@@ -140,12 +128,6 @@ def _execute_single(cmd: str, arg: str, config: Config) -> str:
 
         elif cmd in ("status", "stats"):
             return "[STATUS_REQUEST]"
-
-        elif cmd == "search":
-            if not arg:
-                return "请输入搜索词"
-            # 返回标记，由 Bot 实际执行搜索
-            return f"[SEARCH: {arg}]"
 
         elif cmd == "get_time":
             from web_tools import get_current_time

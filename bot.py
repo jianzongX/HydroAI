@@ -2,18 +2,17 @@
 
 import logging
 import os
-import re
 import signal
 import sys
 import time
 from datetime import datetime
 
-from console_ui import Console, RST, RED, GRN, YEL, BLU, CYN, DIM
+from console_ui import Console
 from config import Config
 from oj_client import OjClient
 from ai_client import AiClient
 from command_parser import parse, CommandResult, execute_actions, ADMIN_ACTION_PROMPT
-from web_tools import web_search, get_current_time
+from web_tools import get_current_time
 
 try:
     from web_server import BotState
@@ -171,10 +170,10 @@ class Bot:
             else:
                 # 先发送即时反馈，避免用户空等
                 self._send_reply(sender, "🤖 AI思考中，请稍等...")
-
                 Console.think_start()
-                history = []
 
+                # 构建系统提示
+                history = []
                 if sender == self.config.admin_id:
                     _sys_extra = {"role": "system", "content": ADMIN_ACTION_PROMPT.strip()}
                     history = [_sys_extra]
@@ -186,7 +185,7 @@ class Bot:
                 else:
                     # 执行 AI 动作指令（仅管理员）
                     if sender == self.config.admin_id:
-                        reply_text = self._execute_with_tools(reply_text, sender)
+                        reply_text = execute_actions(reply_text, self.config)
 
                     for w in self.config.blocked_words:
                         if w in reply_text:
@@ -198,25 +197,6 @@ class Bot:
 
         with self.state.lock:
             self.state.messages_processed += 1
-
-    def _execute_with_tools(self, text: str, sender: int) -> str:
-        """执行 AI 动作指令，并处理搜索结果"""
-        # 先执行普通动作指令
-        text = execute_actions(text, self.config)
-
-        # 处理 [SEARCH: query] 标记 — 执行联网搜索并替换结果
-        def _replace_search(m):
-            query = m.group(1).strip()
-            # 发送搜索中的即时反馈
-            self._send_reply(sender, f"🔍 正在联网搜索「{query}」...")
-            Console.notify(f"搜索: {query}")
-            result = web_search(query)
-            Console.notify("搜索完成")
-            return f"\n[搜索到以下信息]\n{result}\n[/搜索]"
-
-        text = re.sub(r'\[SEARCH:\s*(.*?)\]', _replace_search, text)
-
-        return text
 
     def _send_reply(self, to_uid: int, text: str, retries: int = 2):
         """发送回复（失败重试）"""
