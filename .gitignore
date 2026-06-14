@@ -14,6 +14,11 @@ build/
 dist/
 *.spec
 
+# 图片（截图等，README 中引用在线图）
+*.png
+*.jpg
+*.jpeg
+
 # 系统
 .DS_Store
 Thumbs.db
