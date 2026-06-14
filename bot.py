@@ -169,6 +169,9 @@ class Bot:
                 reply_text = f"消息包含屏蔽词 {words}，已忽略"
                 Console.blocked(words)
             else:
+                # 先发送即时反馈，避免用户空等
+                self._send_reply(sender, "🤖 AI思考中，请稍等...")
+
                 Console.think_start()
                 history = []
 
@@ -183,7 +186,7 @@ class Bot:
                 else:
                     # 执行 AI 动作指令（仅管理员）
                     if sender == self.config.admin_id:
-                        reply_text = self._execute_with_tools(reply_text)
+                        reply_text = self._execute_with_tools(reply_text, sender)
 
                     for w in self.config.blocked_words:
                         if w in reply_text:
@@ -196,7 +199,7 @@ class Bot:
         with self.state.lock:
             self.state.messages_processed += 1
 
-    def _execute_with_tools(self, text: str) -> str:
+    def _execute_with_tools(self, text: str, sender: int) -> str:
         """执行 AI 动作指令，并处理搜索结果"""
         # 先执行普通动作指令
         text = execute_actions(text, self.config)
@@ -204,9 +207,11 @@ class Bot:
         # 处理 [SEARCH: query] 标记 — 执行联网搜索并替换结果
         def _replace_search(m):
             query = m.group(1).strip()
-            Console.notify(f"🔍 正在搜索: {query}")
+            # 发送搜索中的即时反馈
+            self._send_reply(sender, f"🔍 正在联网搜索「{query}」...")
+            Console.notify(f"搜索: {query}")
             result = web_search(query)
-            Console.notify(f"✅ 搜索完成")
+            Console.notify("搜索完成")
             return f"\n[搜索到以下信息]\n{result}\n[/搜索]"
 
         text = re.sub(r'\[SEARCH:\s*(.*?)\]', _replace_search, text)

@@ -56,13 +56,13 @@ def web_search(query: str, max_results: int = 5) -> str:
             # 尝试 DuckDuckGo API
             return _try_duckduckgo_api(query)
 
-        lines = [f"搜索结果: {query}", "---"]
+        lines = [f"搜索结果: {query}"]
         for i, (title, snippet, link) in enumerate(results, 1):
             lines.append(f"{i}. {title}")
             if snippet:
-                lines.append(f"   {snippet[:200]}")
+                lines.append(f"   {snippet[:150]}")
             lines.append(f"   {link}")
-        return "\n".join(lines)
+        return "\n".join(lines[:12])  # 限制长度
 
     except requests.exceptions.Timeout:
         return "[搜索超时]"
@@ -78,17 +78,31 @@ def _parse_duckduckgo_lite(html: str, max_results: int) -> list:
     results = []
     # 查找结果表格中的链接和描述
     import re
+    from urllib.parse import urlparse, urlunparse
     # DuckDuckGo Lite 结果在 <a> 标签中，紧跟着描述
     blocks = re.split(r'<tr>', html)
+    seen_urls = set()
     for block in blocks:
         # 提取标题和链接
         m = re.search(r'<a[^>]*href="([^"]*)"[^>]*>(.*?)</a>', block)
         if not m:
             continue
-        link = m.group(1)
+        raw_link = m.group(1)
         title = re.sub(r'<[^>]+>', '', m.group(2)).strip()
-        if not title or not link or link.startswith("#"):
+        if not title or not raw_link or raw_link.startswith("#"):
             continue
+
+        # 清理链接：确保有协议头
+        link = raw_link
+        if link.startswith("//"):
+            link = "https:" + link
+        elif not link.startswith("http"):
+            continue  # 跳过非 http 链接
+
+        # 去重
+        if link in seen_urls:
+            continue
+        seen_urls.add(link)
 
         # 提取描述片段
         snippet = ""

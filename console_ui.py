@@ -3,7 +3,7 @@
 """
 
 import sys
-from datetime import datetime
+from datetime import datetime as _datetime
 
 # ── ANSI 颜色常量 ──
 RST = "\033[0m"
@@ -133,7 +133,7 @@ class Console:
     # ── 启动横幅 ──
 
     @staticmethod
-    def banner(config, memory_rounds: int = 6):
+    def banner(config):
         """打印启动信息"""
         banner_lines = [
             r"  _   _             _                ___   _____ ",
@@ -154,16 +154,17 @@ class Console:
         Console.blank()
 
         user_list = ", ".join(str(uid) for uid in config.allowed_ids())
+        now = _datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         Console.divider("heavy")
         Console.plain(f"{CYN}  HydroAI · OJ AI 自动回复机器人{RST}")
         Console.divider("heavy")
         Console.blank()
-        Console.info(f"账号:      {config.oj['username']}")
+        Console.info(f"系统时间:  {now}")
+        Console.info(f"OJ 账号:   {config.oj['username']}")
         Console.info(f"AI 模型:   {config.ai['model']}")
         Console.info(f"轮询间隔:  {config.poll_interval} 秒")
         Console.info(f"白名单:    {user_list}")
         Console.info(f"管理员:    {config.admin_id}")
-        Console.info(f"记忆轮数:  {memory_rounds} 轮")
         Console.dim("  Ctrl+C 停止")
         Console.blank()
 
