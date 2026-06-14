@@ -198,7 +198,8 @@ HydroAI/
 ├── command_parser.py    自然语言命令解析（50+ 表达方式）
 ├── console_ui.py        控制台 UI 统一管理
 ├── web_tools.py         工具函数（时间查询）
-├── web_server.py        Web 管理面板（零依赖，纯 http.server）
+├── web_server.py        Web 管理面板后端
+├── index.html           Web 管理面板前端（单独文件）
 ├── settings.json        配置文件（用户填写，不入库）
 └── bot.log              运行日志
 ```
@@ -269,6 +270,11 @@ systemctl restart hydroai
 ---
 
 ## 📋 更新日志
+
+### v1.3.0 fix (2026-06-14)
+
+- 🧩 **HTML 页面分离** — 将内嵌在 `web_server.py` 中的 150+ 行 HTML/CSS/JS 提取到独立 `index.html` 文件
+- 🧹 修改样式或前端逻辑不再需要动 Python 代码，前后端完全分离
 
 ### v1.3.0 (2026-06-14)
 
