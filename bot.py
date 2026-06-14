@@ -243,6 +243,8 @@ class Bot:
 
         if result.reply is not None:
             reply_text = result.reply
+        elif result.status_request:
+            reply_text = self._get_status_report()
         else:
             matched = [w for w in self.config.blocked_words if w in content]
             if matched:
@@ -308,6 +310,69 @@ class Bot:
         ok, _ = self.oj.send_message(self.config.admin_id, msg)
         if ok:
             p(f"    {DIM}· 已通知管理员{RST}")
+
+    @staticmethod
+    def _check_deepseek_balance(api_key: str) -> str:
+        """查询 DeepSeek 账户余额"""
+        try:
+            import requests
+            resp = requests.get(
+                "https://api.deepseek.com/user/balance",
+                headers={"Authorization": f"Bearer {api_key}"},
+                timeout=10,
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                infos = data.get("balance_infos", [])
+                if infos:
+                    parts = []
+                    for b in infos:
+                        cur = b.get("currency", "CNY")
+                        total = b.get("total_balance", "0")
+                        parts.append(f"  {cur} {total}")
+                    return "\n".join(parts)
+                return "无余额信息"
+            return f"查询失败 (HTTP {resp.status_code})"
+        except Exception as e:
+            return f"查询异常: {e}"
+
+    def _get_status_report(self) -> str:
+        """生成机器人运行状态报告"""
+        import time as _time
+        from datetime import datetime as _dt
+
+        # 运行时间
+        started = self.state.started_at
+        try:
+            st = _dt.fromisoformat(started)
+            elapsed = _time.time() - st.timestamp()
+            hours, rem = divmod(int(elapsed), 3600)
+            mins, secs = divmod(rem, 60)
+            uptime_str = f"{hours}小时{mins}分{secs}秒"
+        except Exception:
+            uptime_str = "未知"
+
+        with self.state.lock:
+            processed = self.state.messages_processed
+            active = self.state.active_users
+
+        # DeepSeek 余额
+        balance = self._check_deepseek_balance(self.config.ai["api_key"])
+
+        lines = [
+            "===== HydroAI 运行状态 =====",
+            f"运行时长: {uptime_str}",
+            f"已处理消息: {processed} 条",
+            f"活跃对话: {active} 个用户",
+            f"白名单: {len(self.config.allowed_ids())} 人",
+            f"屏蔽词: {len(self.config.blocked_words)} 个",
+            f"AI 模型: {self.config.ai['model']}",
+            f"轮询间隔: {self.config.poll_interval} 秒",
+            "------------------------",
+            "DeepSeek 余额:",
+            balance,
+        ]
+        return "\n".join(lines)
 
     def _on_signal(self, sig, frame):
         self.running = False

@@ -116,7 +116,6 @@ class AiClient:
 
             if usage_info:
                 total = usage_info.get("total_tokens", 0)
-                content += f" [消耗 {total} tokens]"
                 print(f"    {DIM}[消耗 {total} tokens]{RST}", flush=True)
 
             return content

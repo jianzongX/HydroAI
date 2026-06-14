@@ -18,9 +18,10 @@ def mask_api_key(key: str) -> str:
 class CommandResult:
     """命令解析结果"""
 
-    def __init__(self, reply: str | None = None, save_config: bool = False):
+    def __init__(self, reply: str | None = None, save_config: bool = False, status_request: bool = False):
         self.reply = reply
         self.save_config = save_config
+        self.status_request = status_request
 
 
 # AI 管理员动作指令提示（追加在 system prompt 后面）
@@ -190,6 +191,16 @@ def parse(content: str, sender_id: int, config: Config) -> CommandResult:
     if re.search(r'(?:查看|显示|列出?)\s*(?:一下)?\s*屏蔽词', content):
         return _list(config)
 
+    # 自然语言：查看状态 / 统计
+    if re.search(r'(?:查看|显示|查询|报告|看看)\s*(?:一下)?\s*(?:状态|统计|运行|概况)', content):
+        return CommandResult(reply=None, status_request=True)
+    if re.search(r'(?:运行|跑了|启动).*(?:多久|多长时间|时间)', content):
+        return CommandResult(reply=None, status_request=True)
+    if re.search(r'(?:处理|回复|回答).*(?:多少|几条|几个).*(?:消息|信息)', content):
+        return CommandResult(reply=None, status_request=True)
+    if re.search(r'(?:剩余|还剩|查询)\s*(?:额度|余额|金额|tokens)', content):
+        return CommandResult(reply=None, status_request=True)
+
     # 保留 #xxx 命令（兼容旧操作习惯）
     if content.startswith("#添加 "):
         return _add(content[4:].strip(), config)
@@ -205,6 +216,8 @@ def parse(content: str, sender_id: int, config: Config) -> CommandResult:
         return _remove_blocked(content[6:].strip(), config)
     if content in ("#列表", "#list"):
         return _list(config)
+    if content in ("#状态", "#status"):
+        return CommandResult(reply=None, status_request=True)
     if content in ("#帮助", "#help"):
         return _help()
 
